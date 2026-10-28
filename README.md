@@ -30,7 +30,7 @@ brew reinstall --cask mac-fantasy/tap/clipbar
 
 如果旧 tap 的 GitHub 重定向导致 Homebrew 报名称冲突，可先用 `brew untap --force lljxww/tap` 移除旧安装源，再运行上述切换命令；这不会卸载应用或清理数据。GitHub 转移保留旧仓库重定向，但 Homebrew 对新 tap / Cask 需要独立信任，请优先使用新的完整名称命令。
 
-旧的 [lljxww/homebrew-clipbar](https://github.com/lljxww/homebrew-clipbar) 继续留在个人账号，保留迁移说明和指向 `mac-fantasy/tap` 的映射。
+旧的 `lljxww/homebrew-clipbar` 已删除，`lljxww/clipbar` 安装入口和迁移映射不再提供。若本机仍添加了该旧 tap，请先运行 `brew untap --force lljxww/clipbar`，再按上述步骤切换；该操作不会卸载应用或清理数据。
 
 ## 更新与卸载
 
