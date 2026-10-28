@@ -1,16 +1,42 @@
 import hashlib
+from http.client import IncompleteRead
 import importlib.util
 import json
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
+from urllib.error import HTTPError
 
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("update_casks", ROOT / "scripts/update-casks.py")
 updater = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(updater)
+
+
+class DownloadTests(unittest.TestCase):
+    def test_partial_download_is_retried_from_the_start(self):
+        response = MagicMock()
+        response.__enter__.return_value = response
+        response.read.side_effect = [IncompleteRead(b"partial", 4), b"complete"]
+        with patch.object(updater, "urlopen", return_value=response) as urlopen, patch.object(updater.time, "sleep"):
+            self.assertEqual(updater.download("https://example.com/app.zip"), b"complete")
+            self.assertEqual(urlopen.call_count, 2)
+
+    def test_partial_download_retries_are_bounded(self):
+        with patch.object(updater, "urlopen", side_effect=IncompleteRead(b"partial", 4)) as urlopen, patch.object(updater.time, "sleep"):
+            with self.assertRaises(IncompleteRead):
+                updater.download("https://example.com/app.zip")
+            self.assertEqual(urlopen.call_count, 3)
+
+    def test_missing_asset_is_not_retried(self):
+        error = HTTPError("https://example.com/missing.zip", 404, "Not found", None, None)
+        with patch.object(updater, "urlopen", side_effect=error) as urlopen, patch.object(updater.time, "sleep") as sleep:
+            with self.assertRaises(HTTPError):
+                updater.download("https://example.com/missing.zip")
+            urlopen.assert_called_once()
+            sleep.assert_not_called()
 
 
 class UpdateCaskTests(unittest.TestCase):
@@ -33,6 +59,7 @@ class UpdateCaskTests(unittest.TestCase):
         self.filename = "ClipBar-99.0.0-macOS-universal.zip"
         self.base_url = "https://github.com/lljxww/ClipBar/releases/download/v99.0.0/"
         self.checksums = f"{self.sha256}  {self.filename}\n".encode()
+        self.checksum_filename = "SHA256SUMS"
         self.settings = {
             "repository": "lljxww/ClipBar",
             "asset": "ClipBar-{version}-macOS-universal.zip",
@@ -57,7 +84,7 @@ class UpdateCaskTests(unittest.TestCase):
         return {
             "https://api.github.com/repos/lljxww/ClipBar/releases/latest": json.dumps(self.release).encode(),
             self.base_url + self.filename: self.archive,
-            self.base_url + "SHA256SUMS": self.checksums,
+            self.base_url + self.checksum_filename: self.checksums,
         }[url]
 
     def run_update(self, tokens=None):
@@ -146,6 +173,33 @@ class UpdateCaskTests(unittest.TestCase):
         for tag in ("v01.2.3", "v1.2.3-beta.1", "v1.2", "../1.2.3"):
             with self.subTest(tag=tag):
                 self.release["tag_name"] = tag
+                self.assert_rejected()
+
+    def test_checksum_filename_can_include_the_release_tag(self):
+        self.settings["checksums"] = "SHA256SUMS-{tag}"
+        self.checksum_filename = "SHA256SUMS-v99.0.0"
+        self.release["assets"][1]["name"] = self.checksum_filename
+        self.release["assets"][1]["browser_download_url"] = self.base_url + self.checksum_filename
+        self.run_update()
+        self.assertIn(self.sha256, self.cask.read_text())
+
+    def test_two_component_tag_can_use_three_component_bundle_version(self):
+        self.settings["tag_pattern"] = r"v(?P<version>[0-9]+\.[0-9]+)"
+        self.settings["version_components"] = 3
+        self.settings["url_from_asset"] = True
+        self.cask.write_text(self.original.replace('  app "ClipBar.app"', '  url "https://example.com/old.zip"\n  app "ClipBar.app"'))
+        self.release["tag_name"] = "v99.0"
+        self.base_url = "https://github.com/lljxww/ClipBar/releases/download/v99.0/"
+        for asset in self.release["assets"]:
+            asset["browser_download_url"] = self.base_url + asset["name"]
+        self.run_update()
+        self.assertIn('version "99.0.0"', self.cask.read_text())
+        self.assertIn(f'url "{self.base_url}{self.filename}"', self.cask.read_text())
+
+    def test_invalid_version_component_count_is_rejected_without_writing(self):
+        for components in (0, 2, 5, "3", True):
+            with self.subTest(components=components):
+                self.settings["version_components"] = components
                 self.assert_rejected()
 
 

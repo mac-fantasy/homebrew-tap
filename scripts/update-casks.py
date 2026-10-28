@@ -3,10 +3,13 @@
 
 import argparse
 import hashlib
+from http.client import IncompleteRead
 import json
 import os
 from pathlib import Path
 import re
+import time
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
@@ -15,13 +18,24 @@ STABLE_TAG = r"v?(?P<version>(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-
 
 
 def download(url, *, api=False):
-    headers = {"User-Agent": "lljxww-Homebrew-Tap"}
+    headers = {"User-Agent": "mac-fantasy-Homebrew-Tap"}
     if api:
         headers["Accept"] = "application/vnd.github+json"
         if token := os.environ.get("GH_TOKEN"):
             headers["Authorization"] = f"Bearer {token}"
-    with urlopen(Request(url, headers=headers), timeout=60) as response:
-        return response.read()
+    for attempt in range(3):
+        try:
+            with urlopen(Request(url, headers=headers), timeout=60) as response:
+                return response.read()
+        except HTTPError as error:
+            if error.code != 429 and error.code < 500:
+                raise
+            if attempt == 2:
+                raise
+        except (IncompleteRead, URLError, TimeoutError, ConnectionError):
+            if attempt == 2:
+                raise
+        time.sleep(attempt + 1)
 
 
 def prepare_update(token, settings, root):
@@ -40,12 +54,22 @@ def prepare_update(token, settings, root):
     version = match.group("version")
     if not re.fullmatch(r"[0-9][0-9A-Za-z.+_-]*", version):
         raise ValueError(f"{token}: invalid version: {version!r}")
+    components = settings.get("version_components")
+    if components is not None:
+        parts = version.split(".")
+        if type(components) is not int or not 1 <= components <= 4 or len(parts) > components or any(
+            not re.fullmatch(r"[0-9]+", part) for part in parts
+        ):
+            raise ValueError(f"{token}: invalid numeric version components")
+        version = ".".join(parts + ["0"] * (components - len(parts)))
 
     filename = settings["asset"].format(version=version, tag=tag)
     assets = {asset["name"]: asset for asset in release["assets"]}
     archive = assets[filename]
     base_url = f"https://github.com/{repository}/releases/download/{tag}/"
     checksum_name = settings.get("checksums")
+    if checksum_name is not None:
+        checksum_name = checksum_name.format(version=version, tag=tag)
     for name in (filename, checksum_name):
         if name is not None and assets[name]["browser_download_url"] != base_url + name:
             raise ValueError(f"{token}: unexpected download URL for {name}")
@@ -74,7 +98,10 @@ def prepare_update(token, settings, root):
 
     cask = root / "Casks" / f"{token}.rb"
     content = cask.read_text()
-    for field, value in (("version", version), ("sha256", sha256)):
+    stanzas = [("version", version), ("sha256", sha256)]
+    if settings.get("url_from_asset") is True:
+        stanzas.append(("url", archive["browser_download_url"]))
+    for field, value in stanzas:
         content, count = re.subn(
             rf'^  {field} "[^"]+"$', lambda _: f'  {field} "{value}"', content, flags=re.MULTILINE
         )

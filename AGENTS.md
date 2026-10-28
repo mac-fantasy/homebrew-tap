@@ -1,7 +1,7 @@
 # Unified Homebrew tap
 
-- Canonical repository: `lljxww/homebrew-tap`; Homebrew tap: `lljxww/tap`.
-- Put each application in `Casks/<token>.rb`. Installation uses `brew install --cask lljxww/tap/<token>`.
+- Canonical repository: `mac-fantasy/homebrew-tap`; Homebrew tap: `mac-fantasy/tap`.
+- Put each application in `Casks/<token>.rb`. Installation uses `brew install --cask mac-fantasy/tap/<token>`.
 - Read `README.md`, `apps.json`, and the existing updater before adding an app. Preserve all existing entries, casks, workflows, and unrelated local changes.
 - Download the real upstream release asset and compute its SHA-256. Check application name, bundle ID, architectures, minimum macOS version, and update behavior from the actual bundle or installer. Never fabricate checksums, use `sha256 :no_check` for a versioned release, or disable Gatekeeper/quarantine in a cask.
 - `apps.json` configures `scripts/update-casks.py`; do not create another per-app tap or replace the shared updater with a project-specific one. The updater currently supports one archive and one top-level version/checksum per cask. Extend it and add meaningful verification tests when a different release layout requires it.
