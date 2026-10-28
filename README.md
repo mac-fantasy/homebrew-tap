@@ -79,7 +79,7 @@ gh workflow run update-casks.yml --repo mac-fantasy/homebrew-tap
 
    以上名称仅作示例。`asset` 和 `checksums` 支持 `{version}` 与 `{tag}`。`checksums` 可省略，省略时要求 GitHub 提供安装包的 SHA-256 digest；清单支持标准 `shasum -a 256` / `sha256sum` 格式。
 
-   默认接受 `v1.2.3` 或 `1.2.3` 格式的稳定 tag。其他格式可通过带 `version` 命名捕获组的 `tag_pattern` 配置；`version_components` 可将数字版本补齐到指定段数。若原始 tag 与应用版本不同，可设置 `url_from_asset: true`，让更新器同时写入已验证的实际下载 URL；Mac Monitor 的两段 tag 使用这种配置。
+   默认接受 `v1.2.3` 或 `1.2.3` 格式的稳定 tag。其他格式可通过带 `version` 命名捕获组的 `tag_pattern` 配置；`version_components` 可将数字版本补齐到指定段数。若原始 tag 与应用版本不同，可设置 `url_from_asset: true`，让更新器同时更新已验证的下载 URL，并保留 Homebrew 的版本插值；Mac Monitor 的两段 tag 使用这种配置。
 
 3. 更新应用列表、源项目安装说明，并验证后提交。
 

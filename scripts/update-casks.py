@@ -48,10 +48,11 @@ def prepare_update(token, settings, root):
         download(f"https://api.github.com/repos/{repository}/releases/latest", api=True)
     )
     tag = release["tag_name"]
-    match = re.fullmatch(settings.get("tag_pattern", STABLE_TAG), tag)
-    if release["draft"] or release["prerelease"] or not match:
+    tag_match = re.fullmatch(settings.get("tag_pattern", STABLE_TAG), tag)
+    if release["draft"] or release["prerelease"] or not tag_match:
         raise ValueError(f"{token}: expected a stable version tag, got {tag!r}")
-    version = match.group("version")
+    tag_version = tag_match.group("version")
+    version = tag_version
     if not re.fullmatch(r"[0-9][0-9A-Za-z.+_-]*", version):
         raise ValueError(f"{token}: invalid version: {version!r}")
     components = settings.get("version_components")
@@ -100,7 +101,18 @@ def prepare_update(token, settings, root):
     content = cask.read_text()
     stanzas = [("version", version), ("sha256", sha256)]
     if settings.get("url_from_asset") is True:
-        stanzas.append(("url", archive["browser_download_url"]))
+        # Keep Homebrew's version interpolation so it recognizes a pinned URL.
+        # A two-part tag can still refer to a three-part application version.
+        tag_reference = "#{version}"
+        if version != tag_version:
+            accessor = {1: "major", 2: "major_minor", 3: "major_minor_patch"}[
+                len(tag_version.split("."))
+            ]
+            tag_reference = "#{version." + accessor + "}"
+        tag_template = tag[:tag_match.start("version")] + tag_reference + tag[tag_match.end("version"):]
+        filename_template = settings["asset"].format(version="#{version}", tag=tag_template)
+        url_template = f"https://github.com/{repository}/releases/download/{tag_template}/{filename_template}"
+        stanzas.append(("url", url_template))
     for field, value in stanzas:
         content, count = re.subn(
             rf'^  {field} "[^"]+"$', lambda _: f'  {field} "{value}"', content, flags=re.MULTILINE

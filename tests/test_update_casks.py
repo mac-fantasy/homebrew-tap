@@ -57,11 +57,11 @@ class UpdateCaskTests(unittest.TestCase):
         self.archive = b"test release archive"
         self.sha256 = hashlib.sha256(self.archive).hexdigest()
         self.filename = "ClipBar-99.0.0-macOS-universal.zip"
-        self.base_url = "https://github.com/lljxww/ClipBar/releases/download/v99.0.0/"
+        self.base_url = "https://github.com/mac-fantasy/ClipBar/releases/download/v99.0.0/"
         self.checksums = f"{self.sha256}  {self.filename}\n".encode()
         self.checksum_filename = "SHA256SUMS"
         self.settings = {
-            "repository": "lljxww/ClipBar",
+            "repository": "mac-fantasy/ClipBar",
             "asset": "ClipBar-{version}-macOS-universal.zip",
             "checksums": "SHA256SUMS",
         }
@@ -82,7 +82,7 @@ class UpdateCaskTests(unittest.TestCase):
 
     def download(self, url, **kwargs):
         return {
-            "https://api.github.com/repos/lljxww/ClipBar/releases/latest": json.dumps(self.release).encode(),
+            "https://api.github.com/repos/mac-fantasy/ClipBar/releases/latest": json.dumps(self.release).encode(),
             self.base_url + self.filename: self.archive,
             self.base_url + self.checksum_filename: self.checksums,
         }[url]
@@ -189,12 +189,24 @@ class UpdateCaskTests(unittest.TestCase):
         self.settings["url_from_asset"] = True
         self.cask.write_text(self.original.replace('  app "ClipBar.app"', '  url "https://example.com/old.zip"\n  app "ClipBar.app"'))
         self.release["tag_name"] = "v99.0"
-        self.base_url = "https://github.com/lljxww/ClipBar/releases/download/v99.0/"
+        self.base_url = "https://github.com/mac-fantasy/ClipBar/releases/download/v99.0/"
         for asset in self.release["assets"]:
             asset["browser_download_url"] = self.base_url + asset["name"]
         self.run_update()
         self.assertIn('version "99.0.0"', self.cask.read_text())
-        self.assertIn(f'url "{self.base_url}{self.filename}"', self.cask.read_text())
+        self.assertIn(
+            'url "https://github.com/mac-fantasy/ClipBar/releases/download/v#{version.major_minor}/ClipBar-#{version}-macOS-universal.zip"',
+            self.cask.read_text(),
+        )
+
+    def test_asset_url_keeps_version_interpolation_for_homebrew_audit(self):
+        self.settings["url_from_asset"] = True
+        self.cask.write_text(self.original.replace('  app "ClipBar.app"', '  url "https://example.com/old.zip"\n  app "ClipBar.app"'))
+        self.run_update()
+        self.assertIn(
+            'url "https://github.com/mac-fantasy/ClipBar/releases/download/v#{version}/ClipBar-#{version}-macOS-universal.zip"',
+            self.cask.read_text(),
+        )
 
     def test_invalid_version_component_count_is_rejected_without_writing(self):
         for components in (0, 2, 5, "3", True):
