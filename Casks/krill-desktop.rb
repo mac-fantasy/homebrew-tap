@@ -1,6 +1,6 @@
 cask "krill-desktop" do
-  version "0.1.6"
-  sha256 "8615a83743f5226374a2e439b650e056de1e4e48c5b60cac56544ec7def2da31"
+  version "0.1.7"
+  sha256 "151084ab2a8858081d07e85bb25e88bb7b623a006170ea2f7286716993489651"
 
   url "https://github.com/mac-fantasy/krill-desktop/releases/download/v#{version}/Krill.Desktop-#{version}-macos-universal.zip"
   name "Krill Desktop"
