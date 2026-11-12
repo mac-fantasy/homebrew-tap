@@ -19,6 +19,6 @@
   },
   "krill-desktop": {
     "repository": "mac-fantasy/krill-desktop",
-    "asset": "Krill.Desktop-{version}-macos-arm64.zip"
+    "asset": "Krill.Desktop-{version}-macos-universal.zip"
   }
 }

@@ -9,7 +9,7 @@
 | [ClipBar](https://github.com/mac-fantasy/ClipBar) | macOS 13+，Apple Silicon / Intel | `brew install --cask mac-fantasy/tap/clipbar` |
 | [iPorts](https://github.com/mac-fantasy/iPorts) | macOS 14+，Apple Silicon / Intel | `brew install --cask mac-fantasy/tap/iports` |
 | [Mac Monitor](https://github.com/mac-fantasy/mac-monitor) | macOS 14+，Apple Silicon | `brew install --cask mac-fantasy/tap/mac-monitor` |
-| [Krill Desktop](https://github.com/mac-fantasy/krill-desktop) | macOS 15+，Apple Silicon | `brew install --cask mac-fantasy/tap/krill-desktop` |
+| [Krill Desktop](https://github.com/mac-fantasy/krill-desktop) | macOS 14+，Apple Silicon / Intel | `brew install --cask mac-fantasy/tap/krill-desktop` |
 
 使用完整名称安装时，Homebrew 会自动添加此 tap 并信任指定的 Cask。也可以先运行 `brew tap mac-fantasy/tap`，再使用上表中的完整安装命令。参见 [Homebrew Tap Trust](https://docs.brew.sh/Tap-Trust)。
 
@@ -48,7 +48,7 @@ brew uninstall --cask mac-fantasy/tap/clipbar
 
 普通卸载保留历史和设置。`brew uninstall --cask --zap mac-fantasy/tap/clipbar` 会同时删除该 Cask 声明的数据，请按实际需要使用；其他应用同理。
 
-Krill Desktop `0.1.5` 起使用组织的新更新地址。旧客户端严格校验原仓库 URL，可能无法识别迁移后的附件，需要通过 Homebrew 或新 Release 安装一次新版；账号凭据和偏好目录继续使用原位置。`0.2.0` 起改用 Rust / GPUI，仅支持 macOS 15+ 的 Apple Silicon；0.1.x 的应用内更新器只识别 universal 附件，需通过 Homebrew 或 Release 手动升级一次。
+Krill Desktop `0.1.5` 起使用组织的新更新地址。旧客户端严格校验原仓库 URL，可能无法识别迁移后的附件，需要通过 Homebrew 或新 Release 安装一次新版；账号凭据和偏好目录继续使用原位置。`0.2.1` 已恢复 Swift / SwiftUI、macOS 14+ 和通用包，并修复 JWT 粘贴；已安装 0.2.0 的用户也可检查更新返回原生客户端。
 
 ## 自动同步 Release
 
