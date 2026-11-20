@@ -1,6 +1,6 @@
 cask "shrimpapi-email" do
-  version "0.2.1"
-  sha256 "74435ea0dfa2218173808b2a6bd8f6b68afde8baf5d9cd2e5979f5c96b4c6e82"
+  version "0.2.2"
+  sha256 "08c2e5e36f1315b643fb61420129097b0dd52905b69e93c84409c02253c4a104"
 
   url "https://github.com/mac-fantasy/shrimpapi-email/releases/download/v#{version}/ShrimpAPI.Email-#{version}-macos-universal.zip"
   name "ShrimpAPI Email"
