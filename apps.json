@@ -20,5 +20,10 @@
   "krill-desktop": {
     "repository": "mac-fantasy/krill-desktop",
     "asset": "Krill.Desktop-{version}-macos-universal.zip"
+  },
+  "shrimpapi-email": {
+    "repository": "mac-fantasy/shrimpapi-email",
+    "asset": "ShrimpAPI.Email-{version}-macos-universal.zip",
+    "checksums": "SHA256SUMS"
   }
 }
